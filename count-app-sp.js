@@ -32,6 +32,9 @@ export class CountAppSp extends DDDSuper(I18NMixin(LitElement)) {
         new URL("./locales/count-app-sp.ar.json", import.meta.url).href +
         "/../",
     });
+    this.count = 0
+    this.min = 5;
+    this.max = 25;
   }
 
   // Lit reactive properties
@@ -39,6 +42,10 @@ export class CountAppSp extends DDDSuper(I18NMixin(LitElement)) {
     return {
       ...super.properties,
       title: { type: String },
+      count: { type: Number, reflect: true },
+      // have to establish the max and min as variables first 
+      min: {final: true, type: Number, reflect: true},
+      max: {final: true, type: Number, reflect: true},
     };
   }
 
@@ -52,6 +59,13 @@ export class CountAppSp extends DDDSuper(I18NMixin(LitElement)) {
         background-color: var(--ddd-theme-accent);
         font-family: var(--ddd-font-navigation);
       }
+      // change the colors when reaches 18 + 21
+      :host([count = "18"]) h3 {
+        color: var(--ddd-theme-default-keystoneYellow);
+      }
+      :host([count = "21"]) h3 {
+       color: var(--ddd-theme-default-wonderPurple);
+      }
       .wrapper {
         margin: var(--ddd-spacing-2);
         padding: var(--ddd-spacing-4);
@@ -62,14 +76,36 @@ export class CountAppSp extends DDDSuper(I18NMixin(LitElement)) {
     `];
   }
 
-  // Lit render the HTML
+  // Lit render the HTML + set the buttons for counting + disable the button when min or max is reached 
   render() {
     return html`
 <div class="wrapper">
-  <h3><span>${this.t.title}:</span> ${this.title}</h3>
+
+  <confetti-container id= "confetti">
+  <h3>${this.count}</h3>
+    <button @click="${this.decrement}"
+    ?disabled="${this.min === this.count}">-</button>
+  <button @click="${this.increment}"
+  ?disabled="${this.max === this.count}">+</button>
   <slot></slot>
+  </confetti-container>
 </div>`;
+/** these commands are to implement the max and min in order for the counter to stop incrementing or decrementing */
   }
+  increment() {
+    if(this.count == this.max){
+      return;
+    }
+    this.count++;
+  }
+  decrement () {
+    if(this.count == this.min)
+    {
+      return;
+    }
+    this.count--;
+  }
+
 
   /**
    * haxProperties integration via file reference
@@ -78,6 +114,30 @@ export class CountAppSp extends DDDSuper(I18NMixin(LitElement)) {
     return new URL(`./lib/${this.tag}.haxProperties.json`, import.meta.url)
       .href;
   }
+
+updated(changedProperties) {
+  if (super.updated) {
+    super.updated(changedProperties);
+  }
+  if (changedProperties.has('count')) {
+    if (this.count === 21) {
+      this.makeItRain();
+    }
+  }
+}
+
+makeItRain() {
+
+  import("@haxtheweb/multiple-choice/lib/confetti-container.js").then(
+    (module) => {
+     
+      setTimeout(() => {
+        this.shadowRoot.querySelector("#confetti").setAttribute("popped", "");
+      }, 0);
+    }
+  );
+}
+
 }
 
 globalThis.customElements.define(CountAppSp.tag, CountAppSp);
